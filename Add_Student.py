@@ -43,14 +43,20 @@ def Add_student(position, track):
         try:
             mongo_client = MongoClient(os.getenv('MONGO_URI'))
             db = mongo_client[os.getenv('DATABASE')]
-            collection = db[track]
-            print(f"[DEBUG] Connected to collection: {track}")
+            print(f"[DEBUG] Connected to DB. Will update track: {track}")
         except Exception as e:
             print(f"[ERROR] DB Connection: {e}")
             Verification.connection_error()
             return
 
-        students = list(collection.find())
+        # جلب مستند التراك الصحيح
+        track_doc = db['tracks'].find_one({'track_name': track})
+        if not track_doc:
+            print(f"[ERROR] Track not found: {track}")
+            Verification.Verification_wrong_data()
+            return
+
+        students = track_doc.get('students', [])
         var0 = 0
         entry_7 = 0
         for i in students:
@@ -70,9 +76,8 @@ def Add_student(position, track):
             Verification.Verification_add_name()
             return
         else:
-            # Check uniqueness of name
-            result_to_name = collection.find_one({'name': name})
-            if result_to_name is not None:
+            # Check uniqueness of name داخل نفس التراك
+            if any(s.get('name') == name for s in students):
                 Verification.Verification_name_Student_used()
                 return
 
@@ -99,8 +104,12 @@ def Add_student(position, track):
             'comments': comments
         }
         print(f"[DEBUG] data to insert: {data}")
+        students.append(data)
         try:
-            collection.insert_one(data)
+            db['tracks'].update_one(
+                {'track_name': track},
+                {'$set': {'students': students}}
+            )
             Verification.add_done()
         except Exception as e:
             print(f"[ERROR] Insert: {e}")
