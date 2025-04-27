@@ -183,6 +183,28 @@ def show_all_data(position, track):
             update_treeviwe(values,selected_item)
             update_database(values)
 
+        def update_database(values):
+            student_id = values[0]
+            try:
+                student_id_db = int(student_id)
+            except ValueError:
+                student_id_db = student_id
+            new_data = {
+                'name': values[1],
+                'degrees': int(values[2]),
+                'additional': int(values[3]),
+                'comments': values[5]
+            }
+            db['tracks'].update_one(
+                {'track_name': track, 'track_data.student_id': student_id_db},
+                {'$set': {
+                    'track_data.$.name': new_data['name'],
+                    'track_data.$.degrees': new_data['degrees'],
+                    'track_data.$.additional': new_data['additional'],
+                    'track_data.$.comments': new_data['comments']
+                }}
+            )
+
         def save_edit(event):
             global entry
             new_value = entry.get()
@@ -194,7 +216,7 @@ def show_all_data(position, track):
 
     def add_to_treeviwe():
         global result_after_add_ranking
-        from tkinter import PhotoImage, messagebox
+        from tkinter import PhotoImage
         import os
 
         # جلب الطلاب من track_data داخل مستند التراك الصحيح
@@ -211,29 +233,60 @@ def show_all_data(position, track):
             result_after_add_ranking.append(row)
             ranking += 1
 
-        # تحميل صورة سلة المهملات
-        trash_icon_path = os.path.join(os.path.dirname(__file__), 'trash.png')
-        if os.path.exists(trash_icon_path):
-            trash_img = PhotoImage(file=trash_icon_path)
-        else:
-            trash_img = None
 
-        # إضافة حدث الضغط على عمود الحذف
+        from tkinter import messagebox
         def on_delete_click(event):
             item = my_data.identify_row(event.y)
             column = my_data.identify_column(event.x)
-            if column == f'#{len(columns)}':  # عمود الحذف
-                student_id = my_data.item(item, 'values')[0]
-                if messagebox.askyesno('تأكيد الحذف', 'هل أنت متأكد من حذف الطالب؟'):
-                    db['tracks'].update_one(
+            # Check if click is on the Delete column (last column)
+            if column == f'#{len(columns)}' and item:
+                values = my_data.item(item, 'values')
+                student_id = values[0]
+                student_name = values[1]
+                degrees = values[2]
+                additional = values[3]
+                total = values[4]
+                comments = values[5]
+                total_degrees = values[6]
+                ranking = values[7]
+                # Modern CTkToplevel confirmation dialog
+                confirm_win = cutk.CTkToplevel(root_all_data)
+                confirm_win.title('Delete Student')
+                confirm_win.geometry('380x180')
+                confirm_win.resizable(False, False)
+                confirm_win.grab_set()
+                frame = cutk.CTkFrame(confirm_win)
+                frame.pack(fill='both', expand=True, padx=18, pady=18)
+                msg = cutk.CTkLabel(frame, text='Are you sure you want to delete this student?\nThis action cannot be undone.', font=('Segoe UI', 14), text_color='red', justify='center')
+                msg.pack(pady=(8, 16))
+                btn_frame = cutk.CTkFrame(frame, fg_color='transparent')
+                btn_frame.pack(pady=8)
+                def do_delete():
+                    # حاول تحويل student_id إلى int إذا كان كذلك في قاعدة البيانات
+                    try:
+                        student_id_db = int(student_id)
+                    except ValueError:
+                        student_id_db = student_id
+                    pull_query = {'student_id': student_id_db}
+                    print('Trying to delete:', pull_query)
+                    result = db['tracks'].update_one(
                         {'track_name': track},
-                        {'$pull': {'track_data': {'student_id': student_id}}}
+                        {'$pull': {'track_data': pull_query}}
                     )
-                    my_data.delete(item)
+                    print('Delete result:', result.raw_result)
+                    if result.modified_count == 0:
+                        messagebox.showerror('Delete Error', 'Student was not deleted from database.\nCheck student_id and data types.')
+                    else:
+                        my_data.delete(item)
+                    confirm_win.destroy()
+                def cancel_delete():
+                    confirm_win.destroy()
+                cutk.CTkButton(btn_frame, text='Cancel', command=cancel_delete, width=90, fg_color='#bdbdbd', text_color='#23272e', corner_radius=10).pack(side='left', padx=12)
+                cutk.CTkButton(btn_frame, text='Delete', command=do_delete, width=90, fg_color='#e53935', text_color='#fff', corner_radius=10).pack(side='left', padx=12)
         my_data.bind('<ButtonRelease-1>', on_delete_click)
 
         for idx, i in enumerate(result_after_add_ranking):
-            values = i[:-1] + ['']  # آخر عمود للحذف
+            values = i[:-1] + ['🗑️']  
             tags = None
             if i[4] != None and i[2] != None and i[3] != None:
                 if int(i[4]) == 0 and int(i[6]) != 0:
@@ -248,10 +301,7 @@ def show_all_data(position, track):
                 else:
                     tags = ('> 0.85',)
                     my_data.tag_configure('> 0.85', background='#57e94f')
-            # إدراج الصف مع صورة سلة المهملات
-            my_data.insert(parent='', index='end', text='', values=values, tags=tags, image=trash_img if trash_img else None)
-        # الاحتفاظ بصورة سلة المهملات في المتغير حتى لا يتم حذفها من الذاكرة
-        my_data.trash_img = trash_img
+            my_data.insert(parent='', index='end', text='', values=values, tags=tags)
 
     def Add_student_call():
         Add_Student.Add_student(position, track)
@@ -320,7 +370,6 @@ def show_all_data(position, track):
     
     columns = ['ID', 'Name', 'Degrees', 'Additional', 'Total', 'Commintent', 'Total degrees', 'Ranking', 'Delete']
     my_data = ttk.Treeview(content_frame, height=17, columns=columns, show='headings', style='Treeview')
-    my_data.column("#0", width=0)
     my_data.column("ID", width=40, anchor='center')
     my_data.column("Name", width=250)
     my_data.column("Degrees", width=80, anchor='center')
