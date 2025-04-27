@@ -304,7 +304,132 @@ def show_all_data(position, track):
             my_data.insert(parent='', index='end', text='', values=values, tags=tags)
 
     def Add_student_call():
-        Add_Student.Add_student(position, track)
+        global pending_new_row, pending_new_entry
+        # إذا كان هناك صف قيد الإضافة ولم يُكتب فيه اسم، احذفه أولاً
+        try:
+            if pending_new_entry and pending_new_row:
+                if pending_new_entry.get().strip() == '':
+                    my_data.delete(pending_new_row)
+                    pending_new_entry.destroy()
+        except Exception:
+            pass
+        pending_new_row = None
+        pending_new_entry = None
+        # 1. جلب كل الـ student_id الحاليين في كل التراكات
+        all_tracks = list(db['tracks'].find({}))
+        max_id = 0
+        for tr in all_tracks:
+            for s in tr.get('track_data', []):
+                if s.get('student_id') is not None:
+                    try:
+                        max_id = max(max_id, int(s.get('student_id')))
+                    except Exception:
+                        pass
+        # 2. أضف صف جديد للجدول بقيم افتراضية، الاسم فارغ
+        new_id = max_id + 1
+        default_row = [new_id, '', 0, 0, 0, 'No Comments', 0, len(result_after_add_ranking)+1, '🗑️']
+        item_id = my_data.insert(parent='', index='end', text='', values=default_row)
+        my_data.see(item_id)
+        my_data.selection_set(item_id)
+
+        col_name = '#2'  
+        x, y, width, height = my_data.bbox(item_id, col_name)
+        tree_abs_x = my_data.winfo_rootx()
+        tree_abs_y = my_data.winfo_rooty()
+        root_abs_x = root_all_data.winfo_rootx()
+        root_abs_y = root_all_data.winfo_rooty()
+        x_abs = x + tree_abs_x - root_abs_x
+        y_abs = y + tree_abs_y - root_abs_y
+        entry = tk.Entry(root_all_data)
+        entry.place(x=x_abs, y=y_abs, width=width, height=height)
+        entry.focus()
+        pending_new_row = item_id
+        pending_new_entry = entry
+        def save_new_student(event=None):
+            name = entry.get().strip()
+
+            if len(name.split()) != 4:
+                import Verification
+                Verification.Verification_wrong_data()
+                return
+
+            track_doc = db['tracks'].find_one({'track_name': track})
+            track_data = track_doc.get('track_data', []) if track_doc else []
+            if any(s.get('name') == name for s in track_data):
+                import Verification
+                Verification.Verification_name_Student_used()
+                return
+
+            existing_id = None
+            for tr in all_tracks:
+                for s in tr.get('track_data', []):
+                    if s.get('name') == name:
+                        existing_id = s.get('student_id')
+            student_id = existing_id if existing_id is not None else new_id
+
+
+            degrees = 0
+            additional = 0
+            basic_total = 0
+            total_degrees = 0
+            comments = 'No Comments'
+            data = {
+                'student_id': student_id,
+                'name': name,
+                'degrees': degrees,
+                'additional': additional,
+                'basic_total': basic_total,
+                'total_degrees': total_degrees,
+                'comments': comments
+            }
+            # أضف الطالب إلى قاعدة البيانات
+            if not track_doc:
+                db['tracks'].insert_one({'track_name': track, 'track_data': [data]})
+                track_data = [data]
+            else:
+                track_data.append(data)
+                db['tracks'].update_one({'track_name': track}, {'$set': {'track_data': track_data}})
+            # أضف الطالب للجدول مباشرة
+            # أضف الطالب للجدول مباشرة بنفس منطق add_to_treeviwe
+            new_ranking = len(result_after_add_ranking) + 1
+            values = [student_id, name, degrees, additional, basic_total, comments, total_degrees, new_ranking, '🗑️']
+            # أضف للـ result_after_add_ranking
+            result_after_add_ranking.append([student_id, name, degrees, additional, basic_total, comments, total_degrees, new_ranking, '🗑️'])
+            # أضف للـ Treeview
+            tags = None
+            if basic_total != None and degrees != None and additional != None:
+                if int(basic_total) == 0 and int(total_degrees) != 0:
+                    tags = ('= 0',)
+                    my_data.tag_configure('= 0', background='red')
+                elif int(degrees) < int(total_degrees) * 0.85 and int(degrees) > int(total_degrees) * 0.75:
+                    tags = ('< 0.85 > 0.75',)
+                    my_data.tag_configure('< 0.85 > 0.75', background='#aacc00')
+                elif int(degrees) < int(total_degrees) * 0.75:
+                    tags = ('< 0.75',)
+                    my_data.tag_configure('< 0.75', background='#e9e04f')
+                else:
+                    tags = ('> 0.85',)
+                    my_data.tag_configure('> 0.85', background='#57e94f')
+            my_data.item(item_id, values=values, tags=tags)
+            entry.destroy()
+            pending_new_row = None
+            pending_new_entry = None
+            # فك الربط حتى لا يحذف الصف بعد الإضافة
+            root_all_data.unbind('<Button-1>')
+        def cancel_new_row_anywhere(event=None):
+            global pending_new_row, pending_new_entry
+            # لا تحذف الصف إذا كان الضغط داخل الـ Entry نفسه
+            if event and hasattr(event, 'widget') and pending_new_entry:
+                if event.widget == pending_new_entry:
+                    return
+            if pending_new_entry and pending_new_row:
+                my_data.delete(pending_new_row)
+                pending_new_entry.destroy()
+                pending_new_row = None
+                pending_new_entry = None
+                root_all_data.unbind('<Button-1>')
+        entry.bind('<Return>', save_new_student)
+        root_all_data.bind('<Button-1>', cancel_new_row_anywhere, add='+')
 
     # this function Used to return to the previous page.
     def back(): 

@@ -131,6 +131,8 @@ def delete_track_in_data_base(position):
         label_text.pack(pady=(18, 10))
         btns_frame = cutk.CTkFrame(frame, fg_color='transparent')
         btns_frame.pack(pady=5)
+        def Cancel():
+            delete_data.destroy()
         button_cansel = cutk.CTkButton(btns_frame, text='Cancel', fg_color=("#bdbdbd", "#23272e"), hover_color="#757575", text_color='#23272e', command=Cancel, corner_radius=14, border_color='#bdbdbd', border_width=2, font=("Segoe UI", 13), width=90, height=34)
         button_cansel.grid(row=0, column=0, padx=(0, 16))
         button = cutk.CTkButton(btns_frame, text='OK', fg_color=("#e53935", "#b71c1c"), hover_color="#b71c1c", text_color='#fff', command=ok, corner_radius=14, border_color='#e53935', border_width=2, font=("Segoe UI", 13, "bold"), width=90, height=34)
