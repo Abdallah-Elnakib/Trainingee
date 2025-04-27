@@ -42,24 +42,26 @@ def Add_student(position, track):
 
         try:
             mongo_client = MongoClient(os.getenv('MONGO_URI'))
-            db = mongo_client[os.getenv('DATABASE')]
-            print(f"[DEBUG] Connected to DB. Will update track: {track}")
+            db = mongo_client['test']
+            print(f"[DEBUG] Connected to DB: test. Will update track: {track}")
         except Exception as e:
             print(f"[ERROR] DB Connection: {e}")
             Verification.connection_error()
             return
 
-        # جلب مستند التراك الصحيح
+        # تأكد من وجود التراك، إذا لم يوجد أنشئه تلقائيًا
+        print(f"[DEBUG] Using track: '{track}' from collection 'tracks' in DB '{db.name}'")
         track_doc = db['tracks'].find_one({'track_name': track})
         if not track_doc:
-            print(f"[ERROR] Track not found: {track}")
+            print(f"[ERROR] Track '{track}' not found في مجموعة tracks. لن يتم إنشاء تراك جديد تلقائيًا!")
             Verification.Verification_wrong_data()
             return
 
-        students = track_doc.get('students', [])
+        track_data = track_doc.get('track_data', [])
+        print(f"[DEBUG] track_data BEFORE add: {track_data}")
         var0 = 0
         entry_7 = 0
-        for i in students:
+        for i in track_data:
             if i.get('student_id') is not None:
                 var0 = i['student_id']
             if i.get('total_degrees') is not None:
@@ -69,7 +71,7 @@ def Add_student(position, track):
         name = entry2.get().strip()
         degrees = entry3.get().strip()
         additional = entry4.get().strip()
-        comments = ""  # يمكنك ربطه بعنصر واجهة لاحقًا
+        comments = "No Comments"  # يمكنك ربطه بعنصر واجهة لاحقًا
 
         print(f"[DEBUG] name={name}, degrees={degrees}, additional={additional}")
         if name == '':
@@ -77,7 +79,7 @@ def Add_student(position, track):
             return
         else:
             # Check uniqueness of name داخل نفس التراك
-            if any(s.get('name') == name for s in students):
+            if any(s.get('name') == name for s in track_data):
                 Verification.Verification_name_Student_used()
                 return
 
@@ -104,13 +106,17 @@ def Add_student(position, track):
             'comments': comments
         }
         print(f"[DEBUG] data to insert: {data}")
-        students.append(data)
+        track_data.append(data)
+        print(f"[DEBUG] track_data AFTER add: {track_data}")
         try:
-            db['tracks'].update_one(
+            result = db['tracks'].update_one(
                 {'track_name': track},
-                {'$set': {'students': students}}
+                {'$set': {'track_data': track_data}}
             )
             Verification.add_done()
+            print(f"[DEBUG] update_one result: matched={result.matched_count}, modified={result.modified_count}")
+            root_Add.destroy()
+            List.search_or_add(position, track)
         except Exception as e:
             print(f"[ERROR] Insert: {e}")
             Verification.connection_error()

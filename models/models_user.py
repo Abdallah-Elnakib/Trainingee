@@ -1,4 +1,6 @@
-from mongoengine import Document, StringField
+from mongoengine import connect, Document, StringField
+import os
+connect('test', host='mongodb://localhost:27017/')
 
 class User(Document):
     first_name = StringField(required=True)

@@ -15,8 +15,8 @@ def show_all_data(position, track):
     import Verification
     try:
         mongo_client = MongoClient(os.getenv('MONGO_URI'))
-        db = mongo_client[os.getenv('DATABASE')]
-        collection = db[track]
+        db = mongo_client['test']
+        collection = db['test']
     except Exception as e:
         import Verification
         Verification.connection_error()
@@ -194,46 +194,64 @@ def show_all_data(position, track):
 
     def add_to_treeviwe():
         global result_after_add_ranking
+        from tkinter import PhotoImage, messagebox
+        import os
 
-        students = list(collection.find())
-        for i in students:
-            if i.get('degrees') is not None and (i.get('additional') is not None and i.get('additional') != ''):
-                total = int(i['degrees']) + int(i['additional'])
-                collection.update_one({'name': i['name']}, {'$set': {'total': total}})
+        # جلب الطلاب من track_data داخل مستند التراك الصحيح
+        track_doc = db['tracks'].find_one({'track_name': track})
+        students = []
+        if track_doc and 'track_data' in track_doc:
+            students = track_doc['track_data']
 
         ranking = 1
-        sorted_students = list(collection.find().sort('total', -1))
         result_after_add_ranking = []
-        for i in sorted_students:
-            row = [i.get('id'), i.get('name'), i.get('degrees'), i.get('additional'), i.get('total'), i.get('commintent'), i.get('total_degrees'), ranking]
+        for i in students:
+            total = int(i.get('degrees', 0)) + int(i.get('additional', 0))
+            row = [i.get('student_id'), i.get('name'), i.get('degrees'), i.get('additional'), total, i.get('comments'), i.get('total_degrees'), ranking, '']
             result_after_add_ranking.append(row)
             ranking += 1
 
-        for i in result_after_add_ranking:
-            # If degrees to student =  0 set color 
-            
+        # تحميل صورة سلة المهملات
+        trash_icon_path = os.path.join(os.path.dirname(__file__), 'trash.png')
+        if os.path.exists(trash_icon_path):
+            trash_img = PhotoImage(file=trash_icon_path)
+        else:
+            trash_img = None
 
+        # إضافة حدث الضغط على عمود الحذف
+        def on_delete_click(event):
+            item = my_data.identify_row(event.y)
+            column = my_data.identify_column(event.x)
+            if column == f'#{len(columns)}':  # عمود الحذف
+                student_id = my_data.item(item, 'values')[0]
+                if messagebox.askyesno('تأكيد الحذف', 'هل أنت متأكد من حذف الطالب؟'):
+                    db['tracks'].update_one(
+                        {'track_name': track},
+                        {'$pull': {'track_data': {'student_id': student_id}}}
+                    )
+                    my_data.delete(item)
+        my_data.bind('<ButtonRelease-1>', on_delete_click)
+
+        for idx, i in enumerate(result_after_add_ranking):
+            values = i[:-1] + ['']  # آخر عمود للحذف
+            tags = None
             if i[4] != None and i[2] != None and i[3] != None:
                 if int(i[4]) == 0 and int(i[6]) != 0:
-                    my_data.insert(tags = ('= 0',), parent='', index='end',  text='', values=i) 
+                    tags = ('= 0',)
                     my_data.tag_configure('= 0', background='red')
-
-            # If degrees to student > 85% set color 
-            
                 elif int(i[2]) < int(i[6]) * 0.85 and int(i[2]) > int(i[6]) * 0.75:
-                    my_data.insert(tags = ('< 0.85 > 0.75',), parent='', index='end',  text='', values=i) 
+                    tags = ('< 0.85 > 0.75',)
                     my_data.tag_configure('< 0.85 > 0.75', background='#aacc00')
-                # if degees to student < 85% and deegree > 75% set color
-                elif int(i[2]) < int(i[6]) *0.75 :
-                    my_data.insert(tags = ('< 0.75',), parent='', index='end',  text='', values=i) 
+                elif int(i[2]) < int(i[6]) * 0.75:
+                    tags = ('< 0.75',)
                     my_data.tag_configure('< 0.75', background='#e9e04f')
-
-                else : 
-                    my_data.insert(tags = ('> 0.85',), parent='', index='end',  text='', values=i)
+                else:
+                    tags = ('> 0.85',)
                     my_data.tag_configure('> 0.85', background='#57e94f')
-
-
-
+            # إدراج الصف مع صورة سلة المهملات
+            my_data.insert(parent='', index='end', text='', values=values, tags=tags, image=trash_img if trash_img else None)
+        # الاحتفاظ بصورة سلة المهملات في المتغير حتى لا يتم حذفها من الذاكرة
+        my_data.trash_img = trash_img
 
     def Add_student_call():
         Add_Student.Add_student(position, track)
@@ -300,7 +318,7 @@ def show_all_data(position, track):
     style.map('Treeview', background=[('selected', '#bbdefb')])
 
     
-    columns = ['ID', 'Name', 'Degrees', 'Additional', 'Total', 'Commintent', 'Total degrees', 'Ranking']
+    columns = ['ID', 'Name', 'Degrees', 'Additional', 'Total', 'Commintent', 'Total degrees', 'Ranking', 'Delete']
     my_data = ttk.Treeview(content_frame, height=17, columns=columns, show='headings', style='Treeview')
     my_data.column("#0", width=0)
     my_data.column("ID", width=40, anchor='center')
@@ -311,6 +329,7 @@ def show_all_data(position, track):
     my_data.column("Commintent" , width=160)
     my_data.column("Total degrees" , width=80, anchor='center')
     my_data.column("Ranking" , width=80, anchor='center')
+    my_data.column("Delete", width=60, anchor='center')
     for col in columns:
         my_data.heading(col, text=col)
     my_data.grid(column=0, row=2, columnspan=10, pady=(15,10), padx=10, sticky='nsew')
@@ -328,7 +347,6 @@ def show_all_data(position, track):
     btns = []
     if position == 'manager' or position == 'editor':
         btns.append(cutk.CTkButton(top_btns_frame, text='Add Student', width=120, height=38, fg_color=("#43a047","#388e3c"), text_color="#fff", hover_color="#388e3c", font=("Segoe UI", 13, "bold"), command=Add_student_call, corner_radius=14))
-        btns.append(cutk.CTkButton(top_btns_frame, text='Delete Student', width=120, height=38, fg_color=("#e53935","#b71c1c"), text_color="#fff", hover_color="#c62828", font=("Segoe UI", 13, "bold"), command=delete_record, corner_radius=14))
         btns.append(cutk.CTkButton(top_btns_frame, text='Add Task', width=110, height=38, fg_color=("#0288d1","#81d4fa"), text_color="#fff", hover_color="#0277bd", font=("Segoe UI", 13, "bold"), command=get_degrees, corner_radius=14))
     btns.append(cutk.CTkButton(top_btns_frame, text='Refresh', width=110, height=38, fg_color=("#1976d2","#90caf9"), text_color="#fff", hover_color="#1565c0", font=("Segoe UI", 13, "bold"), command=refrash, corner_radius=14))
     btns.append(cutk.CTkButton(top_btns_frame, text='Back', width=90, height=38, fg_color=("#757575","#bdbdbd"), text_color="#fff", hover_color="#616161", font=("Segoe UI", 13, "bold"), command=back, corner_radius=14))

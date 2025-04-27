@@ -3,12 +3,16 @@ from models.models_user import User
 from config.ConnDB import get_db
 import First_Page
 from dotenv import load_dotenv
+import os
+from pymongo import MongoClient
 
 def login():
     global show_password, check_to_destroy
     check_to_destroy = 0
 
     load_dotenv()
+    mongo_client = MongoClient(os.getenv('MONGO_URI'))
+    db = mongo_client['test']
     root_login = cutk.CTk()
     root_login.geometry('600x400')
     root_login.minsize(500, 350)
