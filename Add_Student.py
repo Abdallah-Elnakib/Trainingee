@@ -73,15 +73,39 @@ def Add_student(position, track):
         additional = entry4.get().strip()
         comments = "No Comments"  # يمكنك ربطه بعنصر واجهة لاحقًا
 
+        # تحقق أن الاسم رباعي
+        if len(name.split()) != 4:
+            Verification.Verification_wrong_data()
+            print("[ERROR] الاسم يجب أن يكون رباعي فقط!")
+            return
+
         print(f"[DEBUG] name={name}, degrees={degrees}, additional={additional}")
         if name == '':
             Verification.Verification_add_name()
             return
         else:
-            # Check uniqueness of name داخل نفس التراك
+            # تحقق من تكرار الاسم داخل نفس التراك
             if any(s.get('name') == name for s in track_data):
                 Verification.Verification_name_Student_used()
                 return
+
+        # البحث عن id الطالب في كل التراكات
+        all_tracks = list(db['tracks'].find({}))
+        existing_id = None
+        max_id = 0
+        for tr in all_tracks:
+            for s in tr.get('track_data', []):
+                if s.get('name') == name:
+                    existing_id = s.get('student_id')
+                if s.get('student_id') is not None:
+                    try:
+                        max_id = max(max_id, int(s.get('student_id')))
+                    except Exception:
+                        pass
+        if existing_id is not None:
+            entry_1 = existing_id
+        else:
+            entry_1 = max_id + 1
 
         if degrees == '':
             degrees = 0
