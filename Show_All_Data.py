@@ -2,11 +2,13 @@ import tkinter as tk
 from  tkinter import ttk
 from pymongo import MongoClient
 import customtkinter as cutk
-import Add_Student
-import List
-# import pyarabic.araby as araby
+from models.models_track import Track
+from config.ConnDB import get_db
+import First_Page
 from dotenv import load_dotenv
+import ui_colors
 import os
+import List
 
 
 def show_all_data(position, track):
@@ -340,7 +342,7 @@ def show_all_data(position, track):
         root_abs_y = root_all_data.winfo_rooty()
         x_abs = x + tree_abs_x - root_abs_x
         y_abs = y + tree_abs_y - root_abs_y
-        entry = tk.Entry(root_all_data)
+        entry = cutk.CTkEntry(root_all_data, text_color=ui_colors.get_text_color(), placeholder_text_color=ui_colors.get_placeholder_color())
         entry.place(x=x_abs, y=y_abs, width=width, height=height)
         entry.focus()
         pending_new_row = item_id
