@@ -1,16 +1,26 @@
 import customtkinter as cutk
 import Add_users
-import First_Page
+
+def center_window(window, width, height):
+    window.update_idletasks()
+    screen_width = window.winfo_screenwidth()
+    screen_height = window.winfo_screenheight()
+    x = int((screen_width / 2) - (width / 2))
+    y = int((screen_height / 2) - (height / 2))
+    window.geometry(f"{width}x{height}+{x}+{y}")
+
+
 import show_all_users
 from PIL import Image, ImageTk
 import add_or_delete_track
 
 def settings_call(position):
     root_settings = cutk.CTk()
-    root_settings.geometry('520x520')
     root_settings.minsize(480, 420)
     root_settings.maxsize(520, 620)
     root_settings.title('Settings | Trainingee')
+    # ... بعد بناء كل عناصر الواجهة ...
+    root_settings.after(0, lambda: center_window(root_settings, 520, 520))
     cutk.set_appearance_mode('system')
     cutk.set_default_color_theme('blue')
     root_settings.configure(bg='#f4f8fb')
@@ -62,8 +72,9 @@ def settings_call(position):
 
 
     def back():
+        from First_Page import first_page
         root_settings.destroy()
-        First_Page.first_page(position)
+        first_page(position)
 
 
     # أزرار الإعدادات بتوزيع عصري وألوان مميزة

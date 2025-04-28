@@ -54,6 +54,10 @@ def get_button_text_color():
     mode = cutk.get_appearance_mode()
     return TEXT_LIGHT if mode == 'Dark' else TEXT_DARK
 
+def get_input_bg_color():
+    mode = cutk.get_appearance_mode()
+    return '#f7fbff' if mode == 'Light' else '#23272e'
+
 def get_footer_color():
     return FOOTER_COLOR
 
@@ -70,6 +74,10 @@ def get_error_color():
 
 def get_hover_primary():
     return HOVER_PRIMARY
+
+def get_hover_secondary():
+    mode = cutk.get_appearance_mode()
+    return "#e3eafc" if mode == 'Light' else "#23272e"
 
 def get_hover_error():
     return HOVER_ERROR

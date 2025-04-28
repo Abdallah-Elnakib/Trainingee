@@ -221,7 +221,7 @@ def show_all_data(position, track):
         from tkinter import PhotoImage
         import os
 
-        # جلب الطلاب من track_data داخل مستند التراك الصحيح
+
         track_doc = db['tracks'].find_one({'track_name': track})
         students = []
         if track_doc and 'track_data' in track_doc:
@@ -264,7 +264,7 @@ def show_all_data(position, track):
                 btn_frame = cutk.CTkFrame(frame, fg_color='transparent')
                 btn_frame.pack(pady=8)
                 def do_delete():
-                    # حاول تحويل student_id إلى int إذا كان كذلك في قاعدة البيانات
+
                     try:
                         student_id_db = int(student_id)
                     except ValueError:
@@ -307,7 +307,7 @@ def show_all_data(position, track):
 
     def Add_student_call():
         global pending_new_row, pending_new_entry
-        # إذا كان هناك صف قيد الإضافة ولم يُكتب فيه اسم، احذفه أولاً
+
         try:
             if pending_new_entry and pending_new_row:
                 if pending_new_entry.get().strip() == '':
@@ -327,7 +327,7 @@ def show_all_data(position, track):
                         max_id = max(max_id, int(s.get('student_id')))
                     except Exception:
                         pass
-        # 2. أضف صف جديد للجدول بقيم افتراضية، الاسم فارغ
+
         new_id = max_id + 1
         default_row = [new_id, '', 0, 0, 0, 'No Comments', 0, len(result_after_add_ranking)+1, '🗑️']
         item_id = my_data.insert(parent='', index='end', text='', values=default_row)
@@ -391,13 +391,13 @@ def show_all_data(position, track):
             else:
                 track_data.append(data)
                 db['tracks'].update_one({'track_name': track}, {'$set': {'track_data': track_data}})
-            # أضف الطالب للجدول مباشرة
-            # أضف الطالب للجدول مباشرة بنفس منطق add_to_treeviwe
+
+
             new_ranking = len(result_after_add_ranking) + 1
             values = [student_id, name, degrees, additional, basic_total, comments, total_degrees, new_ranking, '🗑️']
-            # أضف للـ result_after_add_ranking
+
             result_after_add_ranking.append([student_id, name, degrees, additional, basic_total, comments, total_degrees, new_ranking, '🗑️'])
-            # أضف للـ Treeview
+
             tags = None
             if basic_total != None and degrees != None and additional != None:
                 if int(basic_total) == 0 and int(total_degrees) != 0:
@@ -416,7 +416,7 @@ def show_all_data(position, track):
             entry.destroy()
             pending_new_row = None
             pending_new_entry = None
-            # فك الربط حتى لا يحذف الصف بعد الإضافة
+
             root_all_data.unbind('<Button-1>')
         def cancel_new_row_anywhere(event=None):
             global pending_new_row, pending_new_entry
@@ -433,17 +433,14 @@ def show_all_data(position, track):
         entry.bind('<Return>', save_new_student)
         root_all_data.bind('<Button-1>', cancel_new_row_anywhere, add='+')
 
-    # this function Used to return to the previous page.
     def back(): 
         root_all_data.destroy()
         List.search_or_add(position, track)
 
-    # this function used to Refrash page and get all data in database
     def refrash():
         root_all_data.destroy()
         show_all_data(position, track)
 
-    # this function used to search in database to get data and show is data
     def logout():
         import link
         root_all_data.destroy()

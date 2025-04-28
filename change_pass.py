@@ -1,15 +1,25 @@
 import customtkinter as cutk
 import Verification
-import First_Page
+
+def center_window(window, width, height):
+    window.update_idletasks()
+    screen_width = window.winfo_screenwidth()
+    screen_height = window.winfo_screenheight()
+    x = int((screen_width / 2) - (width / 2))
+    y = int((screen_height / 2) - (height / 2))
+    window.geometry(f"{width}x{height}+{x}+{y}")
+
+from First_Page import first_page
 from dotenv import load_dotenv
 
 def to_change_password(position):
     load_dotenv()
     root_chacge_pass = cutk.CTk()
-    root_chacge_pass.geometry('410x480')
     root_chacge_pass.minsize(380, 440)
     root_chacge_pass.maxsize(410, 520)
     root_chacge_pass.title('Change Password | Trainingee')
+
+    root_chacge_pass.after(0, lambda: center_window(root_chacge_pass, 410, 480))
     cutk.set_appearance_mode('system')
     root_chacge_pass.configure(bg='#f4f8fb')
 
@@ -44,7 +54,7 @@ def to_change_password(position):
 
     def back():
         root_chacge_pass.destroy()
-        First_Page.first_page(position)
+        first_page(position)
 
     def check_and_change_pass():
         from models.models_user import User
@@ -81,7 +91,7 @@ def to_change_password(position):
         else:
             def go_home():
                 root_chacge_pass.destroy()
-                First_Page.first_page(position)
+                first_page(position)
             user.password = new_pass
             user.save()
             Verification.password_changed_successfully(callback=go_home)

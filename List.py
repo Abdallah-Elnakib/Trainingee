@@ -2,7 +2,7 @@ import customtkinter as cutk
 import Add_Student
 import Search
 import Show_All_Data
-import First_Page
+
 
 def search_or_add(position, track):
     root_search_or_add = cutk.CTk()
@@ -28,8 +28,9 @@ def search_or_add(position, track):
         Show_All_Data.show_all_data(position, track)
 
     def back_to_first_page():
+        from First_Page import first_page
         root_search_or_add.destroy()
-        First_Page.first_page(position)
+        first_page(position)
 
 
     def Close(): 
@@ -72,8 +73,7 @@ def search_or_add(position, track):
     close_btn.pack(pady=(24, 4))
 
     # Footer
-    footer = cutk.CTkLabel(frame, text='All rights reserved © 2025', font=("Segoe UI", 10), text_color=("#90a4ae","#b0bec5"))
+    footer = cutk.CTkLabel(frame, text='All rights reserved  2025', font=("Segoe UI", 10), text_color=("#90a4ae","#b0bec5"))
     footer.pack(side="bottom", pady=(0,6))
 
     root_search_or_add.mainloop()
-

@@ -1,15 +1,32 @@
 import customtkinter as cutk
 
+def center_window(window, width, height):
+    window.update_idletasks()
+    screen_width = window.winfo_screenwidth()
+    screen_height = window.winfo_screenheight()
+    x = int((screen_width / 2) - (width / 2))
+    y = int((screen_height / 2) - (height / 2))
+    window.geometry(f"{width}x{height}+{x}+{y}")
 
 
-def show_message(title, message, kind='error', button_text='OK', width=340, height=170, font_size=16):
-    root = cutk.CTk()
-    root.geometry(f'{width}x{height}')
-    root.minsize(width, height)
-    root.maxsize(width, height)
-    root.title(title)
+def show_message(title, message, kind='error', button_text='OK', width=340, height=170, font_size=16, parent=None):
+    # استخدم CTkToplevel بدلاً من نافذة مستقلة
+    if parent is None:
+        import tkinter
+        try:
+            parent = tkinter._default_win
+        except Exception:
+            parent = None
+    win = cutk.CTkToplevel(parent)
+    win.geometry(f'{width}x{height}')
+    win.minsize(width, height)
+    win.maxsize(width, height)
+    win.title(title)
     cutk.set_appearance_mode('system')
-    root.configure(bg='#f4f8fb')
+    win.configure(bg='#f4f8fb')
+    center_window(win, width, height)
+    win.lift()
+    win.focus_force()
 
     # ألوان حسب نوع الرسالة
     if kind == 'error':
@@ -29,7 +46,7 @@ def show_message(title, message, kind='error', button_text='OK', width=340, heig
         btn_hover = "#1565c0"
 
     # Header
-    header = cutk.CTkFrame(root, fg_color=header_color, corner_radius=0, height=38)
+    header = cutk.CTkFrame(win, fg_color=header_color, corner_radius=0, height=38)
     header.pack(fill='x', side='top')
     header.grid_propagate(False)
     header_title = cutk.CTkLabel(header, text=title, font=("Segoe UI", 15, "bold"), text_color=("#fff", "#fff"))
@@ -37,7 +54,7 @@ def show_message(title, message, kind='error', button_text='OK', width=340, heig
     header.grid_columnconfigure(0, weight=1)
 
     # Main Frame
-    frame = cutk.CTkFrame(root, fg_color=("#f4f8fb", "#23272e"), corner_radius=18)
+    frame = cutk.CTkFrame(win, fg_color=("#f4f8fb", "#23272e"), corner_radius=18)
     frame.pack(fill='both', expand=True, padx=10, pady=(10,8))
 
     # الرسالة
@@ -45,39 +62,39 @@ def show_message(title, message, kind='error', button_text='OK', width=340, heig
     label_text.pack(pady=(18, 8))
 
     # زر الموافقة
-    button = cutk.CTkButton(frame, text=button_text, fg_color=btn_color, hover_color=btn_hover, text_color='#fff', command=root.destroy, corner_radius=16, border_color=btn_color, border_width=2, font=("Segoe UI", 13, "bold"), height=38)
+    button = cutk.CTkButton(frame, text=button_text, fg_color=btn_color, hover_color=btn_hover, text_color='#fff', command=win.destroy, corner_radius=16, border_color=btn_color, border_width=2, font=("Segoe UI", 13, "bold"), height=38)
     button.pack(pady=(0, 10), ipadx=10, ipady=2)
 
-    root.bind('<Return>', lambda e: root.destroy())
-    root.mainloop()
+    win.bind('<Return>', lambda e: win.destroy())
+    win.focus_set()
+    win.wait_window()
 
-# الدوال القديمة الآن تستخدم show_message بشكل عصري
 
 def password_changed_successfully(callback=None):
     def on_ok():
         if callback:
             callback()
-        root.destroy()
-    root = cutk.CTk()
-    root.geometry('340x170')
-    root.minsize(340, 170)
-    root.maxsize(340, 170)
-    root.title("Password Changed")
+        win.destroy()
+    win = cutk.CTk()
+    win.geometry('340x170')
+    win.minsize(340, 170)
+    win.maxsize(340, 170)
+    win.title("Password Changed")
     cutk.set_appearance_mode('system')
-    root.configure(bg='#f4f8fb')
-    header = cutk.CTkFrame(root, fg_color=("#43a047", "#388e3c"), corner_radius=0, height=38)
+    win.configure(bg='#f4f8fb')
+    header = cutk.CTkFrame(win, fg_color=("#43a047", "#388e3c"), corner_radius=0, height=38)
     header.pack(fill='x', side='top')
     header.grid_propagate(False)
     header_title = cutk.CTkLabel(header, text="Password Changed", font=("Segoe UI", 15, "bold"), text_color=("#fff", "#fff"))
     header_title.grid(row=0, column=0, padx=15, pady=7, sticky='w')
     header.grid_columnconfigure(0, weight=1)
-    frame = cutk.CTkFrame(root, fg_color=("#f4f8fb", "#23272e"), corner_radius=18)
+    frame = cutk.CTkFrame(win, fg_color=("#f4f8fb", "#23272e"), corner_radius=18)
     frame.pack(fill='both', expand=True, padx=10, pady=(10,8))
     message_label = cutk.CTkLabel(frame, text="Your password has been changed successfully.", font=("Segoe UI", 14), text_color="#23272e")
     message_label.pack(pady=(20, 10))
     ok_btn = cutk.CTkButton(frame, text="OK", fg_color=("#43a047", "#388e3c"), hover_color="#388e3c", text_color='#fff', command=on_ok, corner_radius=16, border_color='#43a047', border_width=2, font=("Segoe UI", 13, "bold"), height=32)
     ok_btn.pack(pady=(5, 10))
-    root.mainloop()
+    win.mainloop()
 
 def delete_user_done():
     show_message("User Deleted", "The user has been deleted successfully.", kind='success')
@@ -120,17 +137,17 @@ def Verification_search_id():
 
 
 def Verification_search_name():
-    root_Verification_search_name = cutk.CTk()
-    root_Verification_search_name.geometry('750x500')
-    root_Verification_search_name.minsize(250, 150)
-    root_Verification_search_name.maxsize(250, 150)
-    root_Verification_search_name.title('Error')
+    win_Verification_search_name = cutk.CTk()
+    win_Verification_search_name.geometry('750x500')
+    win_Verification_search_name.minsize(250, 150)
+    win_Verification_search_name.maxsize(250, 150)
+    win_Verification_search_name.title('Error')
 
 
     def Close(): 
-        root_Verification_search_name.destroy()
+        win_Verification_search_name.destroy()
 
-    frame = cutk.CTkFrame(root_Verification_search_name)
+    frame = cutk.CTkFrame(win_Verification_search_name)
     frame.pack(padx=1, pady=1, fill='both', expand=True)
 
     label_text = cutk.CTkLabel(frame, font=('Roboto', 16), text='Name Is Not Found',
@@ -140,23 +157,26 @@ def Verification_search_name():
     button = cutk.CTkButton(frame, text='OK', hover_color='white', text_color='black', command=Close, corner_radius=20, border_color='black', border_width=2)
     button.pack(pady=15)
 
-    root_Verification_search_name.bind('<Return>', lambda e: Close())
+    win_Verification_search_name.bind('<Return>', lambda e: Close())
 
-    root_Verification_search_name.mainloop()
+    # --- Modal behavior ---
+    # win_Verification_search_name.grab_set()
+    win_Verification_search_name.focus_set()
+    win_Verification_search_name.wait_window()
 
 
 def add_done():
-    root_add_done = cutk.CTk()
-    root_add_done.geometry('750x500')
-    root_add_done.minsize(250, 150)
-    root_add_done.maxsize(250, 150)
-    root_add_done.title('Error')
+    win_add_done = cutk.CTk()
+    win_add_done.geometry('750x500')
+    win_add_done.minsize(250, 150)
+    win_add_done.maxsize(250, 150)
+    win_add_done.title('Error')
 
 
     def Close(): 
-        root_add_done.destroy()
+        win_add_done.destroy()
 
-    frame = cutk.CTkFrame(root_add_done)
+    frame = cutk.CTkFrame(win_add_done)
     frame.pack(padx=1, pady=1, fill='both', expand=True)
 
     label_text = cutk.CTkLabel(frame, font=('Roboto', 16), text='Data Save',
@@ -197,7 +217,10 @@ def connection_error():
 
     connection_error.bind('<Return>', lambda e: Close())
 
-    connection_error.mainloop()
+    # --- Modal behavior ---
+    # connection_error.grab_set()
+    connection_error.focus_set()
+    connection_error.wait_window()
 
 
 def Track_Already_Token():
@@ -223,7 +246,10 @@ def Track_Already_Token():
 
     Track_Already_Token.bind('<Return>', lambda e: Close())
 
-    Track_Already_Token.mainloop()
+    # --- Modal behavior ---
+    # Track_Already_Token.grab_set()
+    Track_Already_Token.focus_set()
+    Track_Already_Token.wait_window()
 
 
 def Track_Not_Found():
@@ -249,4 +275,7 @@ def Track_Not_Found():
 
     Track_Not_Found.bind('<Return>', lambda e: Close())
 
-    Track_Not_Found.mainloop()
+    # --- Modal behavior ---
+    # Track_Not_Found.grab_set()
+    Track_Not_Found.focus_set()
+    Track_Not_Found.wait_window()
