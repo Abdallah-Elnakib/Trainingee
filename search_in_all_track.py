@@ -2,72 +2,101 @@ import customtkinter as cutk
 import mysql.connector
 from tkinter import *
 from  tkinter import ttk
-
+from dotenv import load_dotenv
+import os
 
 def search(name_or_id):
+    load_dotenv()
+    from mysql.connector import Error
+    try:
+        mydb = mysql.connector.connect(host=os.getenv('HOST'), user=os.getenv('USER'), passwd=os.getenv('PASSWORD'), port=os.getenv('PORT'), database=os.getenv('DATABASE'))
+        my_cursor = mydb.cursor()
+    except Error as e:
+        import Verification
+        Verification.connection_error()
+        return
 
-
-    mydb = mysql.connector.connect(host='localhost', user='root', passwd='@Bdallh1722', port=3306, database='Trainingee')
-    my_cursor = mydb.cursor()
-
+    # Unified program colors (customtkinter-like)
+    BG_COLOR = "#f0f0f0"
+    FRAME_COLOR = "#e5e9f2"
+    ACCENT_COLOR = "#3578e5"
+    HEADER_COLOR = "#dde6f7"
+    TEXT_COLOR = "#222"
 
     root_search_in_tracks = cutk.CTk()
-    root_search_in_tracks.geometry('750x500')
-    # root_search_in_tracks.minsize(650, 450)
-    # root_search_in_tracks.maxsize(650, 450)
-    root_search_in_tracks.title('Add The Student')
+    root_search_in_tracks.geometry('900x650')
+    root_search_in_tracks.minsize(900, 650)
+    root_search_in_tracks.maxsize(900, 650)
+    root_search_in_tracks.title('Show All Tracks Search')
+    root_search_in_tracks.configure(bg=BG_COLOR)
 
-    style = ttk.Style(root_search_in_tracks)
+    # Header
+    header = cutk.CTkFrame(root_search_in_tracks, fg_color=HEADER_COLOR, corner_radius=18, height=65)
+    header.pack(fill='x', padx=0, pady=(0, 10))
+    header_label = cutk.CTkLabel(header, text="Search Results In All Tracks", font=("Segoe UI", 24, "bold"), text_color=ACCENT_COLOR)
+    header_label.pack(side='left', padx=28, pady=12)
+
+    # Table frame
+    table_frame = cutk.CTkFrame(root_search_in_tracks, fg_color=FRAME_COLOR, corner_radius=16)
+    table_frame.pack(fill='both', expand=True, padx=28, pady=(0, 18))
+
+    # Custom Treeview Style
+    style = ttk.Style()
     style.theme_use('clam')
-    style.configure('Treeview', background = '#cad2c5', fielbackground = 'blue', foreground = 'black')
-    style.configure('Treeview.Heading', background = '#353535', fielbackground = 'gold', foreground = 'black', corner_radius=20)
+    style.configure('Treeview',
+                    background=FRAME_COLOR,
+                    fieldbackground=FRAME_COLOR,
+                    foreground=TEXT_COLOR,
+                    rowheight=38,
+                    font=("Segoe UI", 14))
+    style.configure('Treeview.Heading',
+                    background=ACCENT_COLOR,
+                    foreground=BG_COLOR,
+                    font=("Segoe UI", 15, "bold"),
+                    relief="flat")
+    style.map('Treeview', background=[('selected', ACCENT_COLOR)])
 
-    frame = cutk.CTkScrollableFrame(root_search_in_tracks)
-    frame.pack(padx=5, pady=5, fill='both', expand=True)
+    my_data = ttk.Treeview(table_frame, height=12, show='headings', selectmode='browse')
+    my_data.pack(fill='both', expand=True, padx=12, pady=12)
 
+    columns = ('Track', 'ID', 'Name', 'Degrees', 'Additional_degrees', 'Total', 'Commintent', 'Total degrees')
+    my_data['columns'] = columns
+    for col, w in zip(columns, [140, 60, 180, 90, 110, 90, 110, 120]):
+        my_data.column(col, anchor=CENTER, width=w, minwidth=60)
+        my_data.heading(col, text=col, anchor=CENTER)
 
-    my_data = ttk.Treeview(frame, height=27)
-    my_data.grid(column=0, row=1, columnspan=25, pady=10)
+    # Scrollbar
+    vsb = ttk.Scrollbar(table_frame, orient="vertical", command=my_data.yview)
+    vsb.pack(side='right', fill='y')
+    my_data.configure(yscrollcommand=vsb.set)
 
-
-    my_data['columns'] = ('Track', 'ID', 'Name', 'Degrees', 'Additional_degrees', 'Total', 'Commintent')
-
-    my_data.column("#0", width=0,  stretch=NO)
-    my_data.column("Track", anchor=CENTER, width=200)
-    my_data.column("ID", anchor=CENTER, width=40)
-    my_data.column("Name", anchor=CENTER, width=150)
-    my_data.column("Degrees", anchor=CENTER, width=80)
-    my_data.column("Additional_degrees", anchor=CENTER, width=200)
-    my_data.column("Total", anchor=CENTER, width=80)
-    my_data.column("Commintent" ,anchor=CENTER, width=100)
-
-    my_data.heading("#0",text="",anchor=CENTER)
-    my_data.heading("Track", text="Track",anchor=CENTER)
-    my_data.heading("ID", text="Id",anchor=CENTER)
-    my_data.heading("Name", text="Name",anchor=CENTER)
-    my_data.heading("Degrees", text="Degrees",anchor=CENTER)
-    my_data.heading("Additional_degrees", text="Additional_degrees",anchor=CENTER)
-    my_data.heading("Total", text="Total",anchor=CENTER)
-    my_data.heading("Commintent", text="Commintent",anchor=CENTER)
-
-    my_cursor.execute('SHOW TABLES') #to show all table
+    # Query DB
+    my_cursor.execute('SHOW TABLES')
     result_track = my_cursor.fetchall()
-
+    found_any = False
     for i in result_track:
-        if i != result_track[0]:
-            sql = f'SELECT * FROM {i[0]} WHERE name LIKE %s OR id = %s'
-            data_base = ('%' + name_or_id + '%', name_or_id)
-            my_cursor.execute(sql, data_base)
-            result = my_cursor.fetchone()
-            add_track = [i[0]]
-            if result is not None:
-                for u in result:
-                    add_track.append(u)
-                my_data.insert(parent='', index='end',  text='', values=add_track)
-            else:
-                add_track.remove(i[0])
-            
-            
-            
+        if i[0] != 'data_users_login' and i[0] != 'tracks_name':
+            my_cursor.execute(f"SHOW COLUMNS FROM {i[0]}")
+            table_columns = [row[0] for row in my_cursor.fetchall()]
+            if 'name' in table_columns and 'id' in table_columns:
+                sql = f'SELECT * FROM {i[0]} WHERE name LIKE %s OR id = %s'
+                data_base = ('%' + name_or_id + '%', name_or_id)
+                my_cursor.execute(sql, data_base)
+                result = my_cursor.fetchone()
+                if result is not None:
+                    found_any = True
+                    # Get real track name from tracks_name table
+                    my_cursor.execute('SELECT name_in_database FROM tracks_name WHERE name = %s', (i[0],))
+                    track_name_row = my_cursor.fetchone()
+                    track_name = track_name_row[0] if track_name_row else i[0]
+                    row_data = [track_name] + list(result[0:])
+                    my_data.insert('', 'end', values=row_data)
+
+    if not found_any:
+        import Verification
+        Verification.Verification_search_name()
+        return
 
     root_search_in_tracks.mainloop()
+
+    
