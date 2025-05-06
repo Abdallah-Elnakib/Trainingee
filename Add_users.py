@@ -39,6 +39,7 @@ def add_users_call():
         User_Name = entry1.get().strip().lower()
         Password = entry2.get()
         Position = check_pos
+        Gender = entry3.get()
         # الحقول الجديدة
         First_Name = User_Name.capitalize()
         Last_Name = ""
@@ -81,6 +82,7 @@ def add_users_call():
             username=User_Name,
             email=email,
             password=Password,
+            gender=Gender,
             role=Position
         ).save()
         Verification.add_user_done()
@@ -104,6 +106,10 @@ def add_users_call():
     entry2 = cutk.CTkEntry(content_frame, placeholder_text='Password', show='*', text_color='black',
                             placeholder_text_color='gray', font=("Segoe UI", 15), height=34, width=220, corner_radius=14, border_color='#1976d2', border_width=2)
     entry2.grid(row=4, column=0, padx=18, pady=4, sticky='ew')
+
+    entry3 = cutk.CTkEntry(content_frame, placeholder_text='Gender', text_color='black',
+                            placeholder_text_color='gray', font=("Segoe UI", 15), height=34, width=220, corner_radius=14, border_color='#1976d2', border_width=2)
+    entry3.grid(row=5, column=0, padx=18, pady=4, sticky='ew')
 
     def checkbox(values):
         global check_pos

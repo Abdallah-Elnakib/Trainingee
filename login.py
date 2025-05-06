@@ -1,5 +1,6 @@
 import customtkinter as ctk
 from models.models_user import User
+import bcrypt
 
 def center_window(window, width, height):
     window.update_idletasks()
@@ -139,16 +140,27 @@ def login():
             user_name = user.username
             password = user.password
             if user is not None:
-                if entry_2 != password:
-                    Verification.Verification_wrong_password()
-                    shake_animation(entry2)
-                elif entry_2 == password:
-                    # Success animation before destroying window
-                    button_login.configure(fg_color='#4CAF50', text='✓ Login Successful')
-                    def go_to_home():
-                        root_login.destroy()
-                        first_page(user)
-                    root_login.after(500, go_to_home)
+                # تحقق من نوع كلمة السر (مشفرة أو نصية)
+                if password.startswith("$2"):
+                    if bcrypt.checkpw(entry_2.encode(), password.encode()):
+                        button_login.configure(fg_color='#4CAF50', text='✓ Login Successful')
+                        def go_to_home():
+                            root_login.destroy()
+                            first_page(user)
+                        root_login.after(500, go_to_home)
+                    else:
+                        Verification.Verification_wrong_password()
+                        shake_animation(entry2)
+                else:
+                    if entry_2 == password:
+                        button_login.configure(fg_color='#4CAF50', text='✓ Login Successful')
+                        def go_to_home():
+                            root_login.destroy()
+                            first_page(user)
+                        root_login.after(500, go_to_home)
+                    else:
+                        Verification.Verification_wrong_password()
+                        shake_animation(entry2)
 
     def shake_animation(widget):
         """Shake effect for invalid inputs"""
@@ -374,7 +386,7 @@ def login():
     # Helper text
     helper = ctk.CTkLabel(
         card_frame, 
-        text='Need help? Contact support@trainingee.com', 
+        text='Need help? Contact trainingee.tracks@gmail.com', 
         font=("Segoe UI", 11), 
         text_color=ui_colors.get_footer_color()
     )

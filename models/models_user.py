@@ -8,6 +8,7 @@ class User(Document):
     username = StringField(required=True)
     email = StringField(required=True)
     password = StringField(required=True)
+    gender = StringField(required=True)
     role = StringField(required=True)
     reset_password_token = StringField()
     meta = {'collection': 'users'}

@@ -9,6 +9,6 @@ MONGO_URI = os.getenv("MONGO_URI")
 def get_db():
     if not MONGO_URI:
         raise Exception("MONGO_URI not set in .env file")
-    disconnect()  # افصل أي اتصال سابق
+    disconnect()   
     return connect(host=MONGO_URI)
 
