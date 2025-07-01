@@ -1,8 +1,11 @@
 import customtkinter as cutk
 import mysql.connector
 import Verification
+from dotenv import load_dotenv
+import os
 
 def show_data(result, position, track):
+    load_dotenv()
     root_data_show = cutk.CTk()
     root_data_show.geometry('750x500')
     root_data_show.minsize(500, 600)
@@ -10,8 +13,15 @@ def show_data(result, position, track):
     root_data_show.title('Data')
 
 
-    mydb = mysql.connector.connect(host='localhost', user='root', passwd='@Bdallh1722', port=3306, database='Trainingee')                        
-    my_cursor = mydb.cursor()
+    from mysql.connector import Error
+    try:
+        mydb = mysql.connector.connect(host=os.getenv('HOST'), user=os.getenv('USER'), passwd=os.getenv('PASSWORD'), port=os.getenv('PORT'), database=os.getenv('DATABASE'))
+        my_cursor = mydb.cursor()
+            
+    except Error as e:
+        import Verification
+        Verification.connection_error()
+        return
 
 
     frame = cutk.CTkFrame(root_data_show)
